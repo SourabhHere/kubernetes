@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: allowed
+  name: allowed
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: allowee
+  name: allowee
+
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: not-allowed
+  name: not-allowed
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: allowee
+  name: allowee
+  namespace: allowee
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: allowee
+  template:
+    metadata:
+      labels:
+        app: allowee
+    spec:
+      containers:
+      - image: nginx
+        imagePullPolicy: Always
+        name: nginx
+        resources: {}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: allowed
+  name: allowed
+  namespace: allowed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: allowed
+  template:
+    metadata:
+      labels:
+        app: allowed
+    spec:
+      containers:
+      - image: nginx
+        imagePullPolicy: Always
+        name: nginx
+        resources: {}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: not-allowed
+  name: not-allowed
+  namespace: not-allowed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: not-allowed
+  template:
+    metadata:
+      labels:
+        app: not-allowed
+    spec:
+      containers:
+      - image: nginx
+        imagePullPolicy: Always
+        name: nginx
+        resources: {}
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: net-policy
+  namespace: allowee
+
+spec: 
+  podSelector:
+    matchLabels:
+      app: allowee
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: allowed
+    ports:
+    - protocol: TCP
+      port: 80

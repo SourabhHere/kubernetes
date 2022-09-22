@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  selector:
+    matchLabels:
+      app: hello-python
+  template:
+    metadata:
+      labels:
+        app: hello-python
+    spec:
+      containers:
+      - name: app
+        imagePullPolicy: Never
+        image: app
+        volumeMounts:
+        - name: vol-pvc
+          mountPath: "/etc/local-data"
+        - name: conf
+          mountPath: "/etc/conf"
+          readOnly: true
+        ports:
+        - containerPort: 8000
+        env:
+        # Define the environment variable
+        - name: name
+          valueFrom:
+            secretKeyRef:
+            # configMapKeyRef:
+              name: secret
+              key: name 
+      volumes:
+      - name: conf
+        configMap:
+          name: configuration
+      - name: vol-pvc
+        persistentVolumeClaim:
+          claimName: my-pvc
+  replicas: 2
